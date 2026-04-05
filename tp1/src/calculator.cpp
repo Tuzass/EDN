@@ -5,11 +5,11 @@
 #include <map>
 
 double f(double x, double y){
-    return 2 * cos(x) - y;
+    return -y * y;
 }
 
 double phi(double x){
-    return sin(x) + cos(x);
+    return 1.0 / x;
 }
 
 void writeResultPoints(std::vector<double> x, std::vector<double> y, int N){
@@ -63,7 +63,7 @@ std::string stripString(std::string str){
 std::map<std::string, std::string> loadSettings(){
     std::map<std::string, std::string> settings {};
 
-    std::ifstream settings_file("settings.ini", std::ios::in);
+    std::ifstream settings_file("tp1-settings.ini", std::ios::in);
     if (!settings_file)
         throw std::runtime_error("Failed to open settings.ini");
     
@@ -80,7 +80,7 @@ std::map<std::string, std::string> loadSettings(){
     return settings;
 }
 
-void euler(double x_0, double X, double y_0, double h){
+void eulerMethod(double x_0, double X, double y_0, double h){
     const int N = (X - x_0) / h;
     std::vector<double> x(N + 1);
     std::vector<double> y(N + 1);
@@ -98,7 +98,7 @@ void euler(double x_0, double X, double y_0, double h){
 }
 
 // Runge-Kutta method with 2 stages
-void rk2(double x_0, double X, double y_0, double h, double b_2){
+void rk2Method(double x_0, double X, double y_0, double h, double b_2){
     const int N = (X - x_0) / h;
     std::vector<double> x(N + 1);
     std::vector<double> y(N + 1);
@@ -119,7 +119,7 @@ void rk2(double x_0, double X, double y_0, double h, double b_2){
 }
 
 // Runge-Kutta method with 4 stages
-void rk4(double x_0, double X, double y_0, double h){
+void rk4Method(double x_0, double X, double y_0, double h){
     const int N = (X - x_0) / h;
     std::vector<double> x(N + 1);
     std::vector<double> y(N + 1);
@@ -141,6 +141,30 @@ void rk4(double x_0, double X, double y_0, double h){
     writeSolutionPoints(x_0, X, N);
 }
 
+// implicit theta method; num_corrections indicates how many corrections in the predictor-corrector scheme
+void thetaMethod(double x_0, double X, double y_0, double h, double theta, int num_corrections){
+    const int N = (X - x_0) / h;
+    std::vector<double> x(N + 1);
+    std::vector<double> y(N + 1);
+    x[0] = x_0;
+    y[0] = y_0;
+
+    for (int j = 1; j <= N; j++){
+        double y_approx = y[j - 1] + h * f(x[j - 1], y[j - 1]); // first approximation given by Euler's method
+        x[j] = x[0] + j * h;
+
+        for (int k = 1; k <= num_corrections; k++){
+            y_approx = y[j - 1] + h * ((1 - theta) * f(x[j - 1], y[j - 1]) + theta * f(x[j], y_approx));
+        }
+
+        y[j] = y_approx;
+    }
+
+    writeResultPoints(x, y, N);
+    writeDifferences(x, y, N);
+    writeSolutionPoints(x_0, X, N);
+}
+
 int main(){
     std::map<std::string, std::string> settings = loadSettings();
 
@@ -148,15 +172,20 @@ int main(){
     double x_0 {std::stod(settings["x_0"])};
     double X {std::stod(settings["X"])};
     double y_0 {std::stod(settings["y_0"])};
+    int num_corrections {std::stoi(settings["num_corrections"])};
 
     if (settings["method"] == "euler"){
-        euler(x_0, X, y_0, h);
+        eulerMethod(x_0, X, y_0, h);
     } else if (settings["method"] == "heun"){
-        rk2(x_0, X, y_0, h, 0.5); // Heun's method is RK2 with b_2 = 0.5
+        rk2Method(x_0, X, y_0, h, 0.5); // Heun's method is RK2 with b_2 = 0.5
     } else if (settings["method"] == "midpoint"){
-        rk2(x_0, X, y_0, h, 1); // Midpoint method is RK2 with b_2 = 1
+        rk2Method(x_0, X, y_0, h, 1); // Midpoint method is RK2 with b_2 = 1
     } else if (settings["method"] == "rk4"){
-        rk4(x_0, X, y_0, h);
+        rk4Method(x_0, X, y_0, h);
+    } else if (settings["method"] == "implicit_euler"){
+        thetaMethod(x_0, X, y_0, h, 1, num_corrections); // Implicit Euler's method is Theta with theta = 1
+    } else if (settings["method"] == "trapezoidal"){
+        thetaMethod(x_0, X, y_0, h, 0.5, num_corrections); // Trapezoidal method is Theta with theta = 0.5
     }
 
     return 0;

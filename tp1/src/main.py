@@ -2,10 +2,10 @@ import matplotlib.pyplot as plt
 import subprocess
 import os
 
-def loadSettings():
+def loadSettings(file_name):
     settings = {}
 
-    with open("settings.ini", "r") as file:
+    with open(file_name, "r") as file:
         for line in file:
             if not line.strip() or line[0] == '#':
                 continue
@@ -31,10 +31,11 @@ def readPoints(file_name):
     
     return x, y
 
-method_names = {"euler": "Euler", "heun": "Heun", "midpoint": "Ponto médio", "rk4": "RK4"}
+method_names = {"euler": "Euler", "heun": "Heun", "midpoint": "Ponto médio", "rk4": "RK4", "implicit_euler": "Euler regressivo", "trapezoidal": "Trapezoidal"}
 
-subprocess.run(["calculator.exe"])
-settings = loadSettings()
+subprocess.run(["tp1-calculator.exe"])
+settings_file_name = "tp1-settings.ini"
+settings = loadSettings(settings_file_name)
 
 x_res, y_res = readPoints("results.txt")
 x_sol, y_sol = readPoints("solution.txt")
