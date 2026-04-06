@@ -33,8 +33,8 @@ def readPoints(file_name):
 
 method_names = {"euler": "Euler", "heun": "Heun", "midpoint": "Ponto médio", "rk4": "RK4", "implicit_euler": "Euler regressivo", "trapezoidal": "Trapezoidal"}
 
-subprocess.run(["tp1-calculator.exe"])
-settings_file_name = "tp1-settings.ini"
+subprocess.run(["calculator.exe"])
+settings_file_name = "settings.ini"
 settings = loadSettings(settings_file_name)
 
 x_res, y_res = readPoints("results.txt")

@@ -63,7 +63,7 @@ std::string stripString(std::string str){
 std::map<std::string, std::string> loadSettings(){
     std::map<std::string, std::string> settings {};
 
-    std::ifstream settings_file("tp1-settings.ini", std::ios::in);
+    std::ifstream settings_file("settings.ini", std::ios::in);
     if (!settings_file)
         throw std::runtime_error("Failed to open settings.ini");
     
