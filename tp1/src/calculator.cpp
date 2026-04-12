@@ -5,11 +5,11 @@
 #include <map>
 
 double f(double x, double y){
-    return -y * y;
+    return -100 * y;
 }
 
 double phi(double x){
-    return 1.0 / x;
+    return exp(-100 * x);
 }
 
 void writeResultPoints(std::vector<double> x, std::vector<double> y, int N){
