@@ -1,0 +1,319 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{parskip}
+\usepackage[brazil]{babel}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+\usepackage{placeins}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\geometry{
+	a4paper,
+	left=2cm,
+	right=2cm,
+	top=2cm,
+	bottom=2cm,
+}
+
+\definecolor{dkgreen}{rgb}{0,0.4,0}
+\definecolor{dkblue}{rgb}{0,0,0.6}
+\definecolor{dkred}{rgb}{0.5,0,0}
+\definecolor{ltblue}{rgb}{0.1,0.1,0.9}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{green}{rgb}{0,0.6,0}
+\definecolor{orange}{rgb}{0.75,0.25,0}
+\colorlet{lessOrange}{orange!70!gray}
+
+\lstset{frame=tb,
+	language=C++,
+	aboveskip=3mm,
+	belowskip=3mm,
+	showstringspaces=false,
+	columns=flexible,
+	basicstyle={\small\ttfamily},
+	numbers=none,
+	literate={~}{{\raisebox{-0.7ex}{\texttt{\char`~}}}}1,
+	numberstyle=\tiny\color{gray},
+	keywordstyle=\color{dkblue},
+	commentstyle=\color{gray},
+	identifierstyle=\color{lessOrange},
+	morecomment=[l][\color{dkgreen}]{\#},
+	stringstyle=\color{dkgreen},
+	breaklines=true,
+	breakatwhitespace=true,
+	tabsize=4,
+	morekeywords={
+		uniform, layout, in, out, vec2, vec3, vec4, mat2, mat3, mat4,
+		sampler2D, samplerCube, discard, image2D, readonly, ivec2,
+		GLuint, GLint, GLchar, GLsizei, GLenum, GLfloat, GLboolean,
+		GLvoid, GLbitfield, GLsync, GLuint64, GLintptr, GLsizeiptr,
+		atomic_uint, flat, smooth
+	}
+}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\separator}{\noindent\makebox[\textwidth]{\rule{\textwidth}{0.4pt}}}
+\newcommand{\vs}{\vspace{0.2cm}}
+
+\title{TP2 - EDN}
+\author{Artur Fonseca Costa}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+
+
+O código completo pode ser encontrado \href{https://github.com/Tuzass/EDN}{aqui}.
+
+\separator
+
+\vs
+2.1. O método de Adams-Bashforth é o método explícito de passo múltiplo que busca resolver o PVI
+\[y' = f(x, y); y_0 = y(x_0); x \in [x_0, X]\]
+por meio da integral
+\[y(x_{j + 1}) = y(x_j) + \int_{x_j}^{x_{j + 1}} f(x, y(x)) \, dx,\]
+aproximando $f(x, y(x))$ por um polinômio. Especificamente, pelo polinômio de Lagrange $p(x)$ que passa pelos pontos $(x_{j - k + 1}, y_{j - k + 1}), \dots, (x_j, y_j)$. Para o método de Adams-Bashforth de 3 passos, $k = 3$, e os pontos a serem considerados são $(x_{j - 2}, y_{j - 2})$, $(x_{j - 1}, y_{j - 1})$, e $(x_j, y_j)$. Ou seja,
+\[p(x) = \sum_{s = 0}^2 f_{j - s} l_s(x),\]
+onde $f_{j - s} = f(x_{j - s}, y_{j - s})$ e:
+\[l_m(x) = \prod_{r = 0, r \neq l}^2 \frac{x - x_{j - r}}{x_{j - l} - x_{j - r}}.\]
+Com isso, tem-se o método de Adams-Bashforth de 3 passos:
+\begin{flalign}
+	y_{j + 1} &= y_j + \int_{x_j}^{x_{j + 1}} p(x) \, dx \nonumber \\
+	&= y_j + \int_{x_j}^{x_{j + 1}} \sum_{s = 0}^2 f_{j - s} l_s(x) \, dx \nonumber \\
+	&= y_j + \sum_{s = 0}^2 f_{j - s} \left[ \int_{x_j}^{x_{j + 1}} l_s(x) \, dx \right]. \nonumber
+\end{flalign}
+
+Seja $\lambda(x) = x - x_j$.
+\begin{itemize}
+	\item $s = 0$:
+		\[l_0(x) = \frac{(x - x_{j - 1}) (x - x_{j - 2})}{(x_j - x_{j - 1}) (x - x_{j - 2})} = \frac{(\lambda + h) (\lambda + 2h)}{2 h^2} = \frac{\lambda^2 + 3h \lambda + 2 h^2}{2 h^2}\]
+		\begin{flalign}
+			\int_{x_j}^{x_{j + 1}} l_0(x) \, dx &= \frac{1}{2 h^2} \int_0^h (\lambda^2 + 3h \lambda + 2 h^2) \, d \lambda \nonumber \\
+			&= \frac{1}{2 h^2} \left( \frac{\lambda^3}{3} + \frac{3h \lambda^2}{2} + 2 h^2 \lambda \right) \bigg\vert_0^h \nonumber \\
+			&= \frac{1}{2 h^2} \left( \frac{h^3}{3} + \frac{3 h^3}{2} + 2 h^3 \right) \nonumber \\
+			&= \frac{h}{6}+ \frac{3h}{4} + h = h \cdot \frac{4 + 18 + 24}{24} = \frac{23}{12} h. \nonumber
+		\end{flalign}
+
+	\item $s = 1$:
+		\[l_1(x) = \frac{(x - x_j) (x - x_{j - 2})}{(x_{j - 1} - x_j) (x_{j - 1} - x_{j - 2})} = -\frac{\lambda (\lambda + 2h)}{h^2}\]
+		\clearpage
+		\begin{flalign}
+			\int_{x_j}^{x_{j + 1}} l_1(x) \, dx &= -\frac{1}{h^2} \int_0^h (\lambda^2 + 2h \lambda) \, d \lambda \nonumber \\
+			&= -\frac{1}{h^2} \left( \frac{\lambda^3}{3} + h \lambda^2 \right) \bigg\vert_0^h \nonumber \\
+			&= -\frac{1}{h^2} \left( \frac{h^3}{3} + h^3 \right) \nonumber \\
+			&= -\frac{4}{3} h = -\frac{16}{12} h. \nonumber
+		\end{flalign}
+
+	\item $s = 2$:
+		\[l_2(x) = \frac{(x - x_j) (x - x_{j - 1})}{(x_{j - 2} - x_j) (x_{j - 2} - x_{j - 1})} = \frac{\lambda (\lambda + h)}{2 h^2}\]
+		\begin{flalign}
+			\int_{x_j}^{x_{j + 1}} l_2(x) \, dx &= \frac{1}{2 h^2} \int_0^h (\lambda^2 + h \lambda) \, d \lambda \nonumber \\
+			&= \frac{1}{2 h^2} \left( \frac{\lambda^3}{3} + \frac{h \lambda^2}{2} \right) \bigg\vert_0^h \nonumber \\
+			&= \frac{1}{2 h^2} \left( \frac{h^3}{3} + \frac{h^3}{2} \right) \nonumber \\
+			&= \frac{h}{6} + \frac{h}{4} = h \cdot \frac{3 + 2}{12} = \frac{5}{12} h. \nonumber
+		\end{flalign}
+\end{itemize}
+
+Finalmente, o método de Adams-Bashforth de 3 passos é:
+\[y_{j + 1} = y_j + \frac{h}{12} [23 f_j - 16 f_{j - 1} + 5 f_{j - 2}].\]
+O erro de truncamento local é dado por:
+\[\tau_j(h) = \frac{\varphi(x_{j + 1}) - \varphi(x_j)}{h} - \frac{1}{12} (23 \varphi'(x_j) - 16 \varphi'(x_{j - 1}) + 5 \varphi'(x_{j - 2})).\]
+
+Dadas as expansões de Taylor de $\varphi(x_{j + 1})$, $\varphi'(x_{j - 1})$ e $\varphi'(x_{j - 2})$, tem-se que:
+\begin{flalign}
+	\tau_j(h) &= \frac{1}{h} \left[ \varphi(x_j) + h \varphi'(x_j) + \frac{h^2}{2} \varphi''(x_j) + \frac{h^3}{6} \varphi'''(x_j) + \frac{h^4}{24} \varphi^{(4)}(x_j) + O(h^5) - \varphi(x_j) \right] - \frac{23}{12} \varphi'(x_j) \nonumber \\
+	&+ \frac{16}{12} \left[ \varphi'(x_j) - h \varphi''(x_j) + \frac{h^2}{2} \varphi'''(x_j) - \frac{h^3}{6} \varphi^{(4)}(x_j) + O(h^4) \right] \nonumber \\
+	&- \frac{5}{12} \left[ \varphi'(x_j) - 2h \varphi''(x_j) + 2 h^2 \varphi'''(x_j) - \frac{4 h^3}{3} \varphi^{(4)}(x_j) + O(h^4) \right] \nonumber \\
+	&= \varphi'(x_j) + \frac{h}{2} \varphi''(x_j) + \frac{h^2}{3} \varphi'''(x_j) + \frac{h^3}{24} \varphi^{(4)}(x_j) \nonumber \\
+	&- \varphi'(x_j) - \frac{h}{2} \varphi''(x_j) - \frac{h^2}{6} \varphi'''(x_j) + \frac{h^3}{3} \varphi^{(4)}(x_j) + O(h^4) \nonumber \\
+	&= \frac{3}{8} h^3 \varphi^{(4)}(x_j) + O(h^4) = O(h^3). \nonumber
+\end{flalign}
+
+
+2.2. O método de Adams-Moulton é um método de passo múlitplo definido de forma muito semelhante ao método de Adams-Bashforth. A maior diferença é que o polinômio $p(x)$, que aproxima a função $f(x, y(x))$, agora passa pelos pontos $(x_{j - k + 1}, y_{j - k + 1}), \dots, (x_j, y_j)$, e $(x_{j + 1}, y_{j + 1})$, sendo portanto um método implícito. Ou seja, sendo $k = 3$, tem-se que:
+\[p(x) = \sum_{s = 0}^3 f_{j - s + 1} l_s(x).\]
+Logo, o método de Adams-Moulton de 3 passos é dado por:
+\[y_{j + 1} = y_j + \sum_{s = 0}^3 f_{j - s + 1} \left[ \int_{x_j}^{x_{j + 1}} l_s(x) \, dx \right].\]
+
+Seja novamente $\lambda = x - x_j$.
+Seja $\lambda(x) = x - x_j$.
+\begin{itemize}
+	\item $s = 0$:
+	\[l_0(x) = \frac{(x - x_j) (x - x_{j - 1}) (x - x_{j - 2})}{(x_{j + 1} - x_j) (x_{j + 1} - x_{j - 1}) (x_{j + 1} - x_{j - 2})} = \frac{\lambda (\lambda + h) (\lambda + 2h)}{6 h^3} = \frac{\lambda^3 + 3h \lambda^2 + 2 h^2 \lambda}{6 h^3}\]
+	\begin{flalign}
+		\int_{x_j}^{x_{j + 1}} l_0(x) \, dx &= \frac{1}{6 h^3} \int_0^h (\lambda^3+ 3h \lambda^2 + 2 h^2 \lambda) \, d \lambda \nonumber \\
+		&= \frac{1}{6 h^3} \left( \frac{\lambda^4}{4} + h \lambda^3 + h^2 \lambda^2 \right) \bigg\vert_0^h \nonumber \\
+		&= \frac{1}{6 h^3} \left( \frac{h^4}{4} + 2 h^4 \right) \nonumber \\
+		&= \frac{9}{24} h. \nonumber
+	\end{flalign}
+
+	\item $s = 1$:
+	\begin{flalign}
+		l_1(x) &= \frac{(x - x_{j + 1}) (x - x_{j - 1}) (x - x_{j - 2})}{(x_j - x_{j + 1}) (x_j - x_{j - 1}) (x_j - x_{j - 2})} \nonumber \\
+		&= -\frac{(\lambda - h) (\lambda + h) (\lambda + 2h)}{2 h^3} = -\frac{\lambda^3 + 2h \lambda^2 - h^2 \lambda - 2 h^3}{2 h^3} \nonumber
+	\end{flalign}
+	\begin{flalign}
+		\int_{x_j}^{x_{j + 1}} l_1(x) \, dx &= -\frac{1}{2 h^3} \int_0^h (\lambda^3 + 2h \lambda^2 - h^2 \lambda - 2 h^3) \, d \lambda \nonumber \\
+		&= -\frac{1}{2 h^3} \left( \frac{\lambda^4}{4} + \frac{2h \lambda^3}{3} - \frac{h^2 \lambda^2}{2} - 2 h^3 \lambda \right) \bigg\vert_0^h \nonumber \\
+		&= -\frac{1}{2 h^3} \left( \frac{h^4}{4} + \frac{2 h^4}{3} - \frac{h^4}{2} - 2 h^4 \right) \nonumber \\
+		&= -\frac{h}{2} \left( \frac{3 + 8 - 6 - 24}{12} \right) = \frac{19}{24} h. \nonumber
+	\end{flalign}
+
+	\item $s = 2$:
+	\begin{flalign}
+		l_2(x) &= \frac{(x - x_{j + 1}) (x - x_j) (x - x_{j - 2})}{(x_{j - 1} - x_{j + 1}) (x_{j - 1} - x_j) (x_{j - 1} - x_{j - 2})} \nonumber \\
+		&= \frac{\lambda (\lambda - h) (\lambda + 2h)}{2 h^3} = \frac{\lambda^3 + h \lambda^2 - 2 h^2 \lambda}{2 h^3} \nonumber
+	\end{flalign}
+	\begin{flalign}
+		\int_{x_j}^{x_{j + 1}} l_2(x) \, dx &= \frac{1}{2 h^3} \int_0^h (\lambda^3 + h \lambda^2 - 2 h^2 \lambda) \, d \lambda \nonumber \\
+		&= \frac{1}{2 h^3} \left( \frac{\lambda^4}{4} + \frac{h \lambda^3}{3} - h^2 \lambda^2 \right) \bigg\vert_0^h \nonumber \\
+		&= \frac{1}{2 h^3} \left( \frac{h^4}{4} + \frac{h^4}{3} - h^4 \right) \nonumber \\
+		&= \frac{h}{2} \left( \frac{3 + 4 - 12}{12} \right) = -\frac{5}{24} h. \nonumber
+	\end{flalign}
+
+	\item $s = 3$:
+	\begin{flalign}
+		l_2(x) &= \frac{(x - x_{j + 1}) (x - x_j) (x - x_{j - 1})}{(x_{j - 2} - x_{j + 1}) (x_{j - 2} - x_j) (x_{j - 2} - x_{j - 1})} \nonumber \\
+		&= -\frac{\lambda (\lambda - h) (\lambda + h)}{6 h^3} = -\frac{\lambda^3 - h^2 \lambda}{6 h^3} \nonumber
+	\end{flalign}
+	\begin{flalign}
+		\int_{x_j}^{x_{j + 1}} l_2(x) \, dx &= -\frac{1}{6 h^3} \int_0^h (\lambda^3 - h^2 \lambda) \, d \lambda \nonumber \\
+		&= -\frac{1}{6 h^3} \left( \frac{\lambda^4}{4} - \frac{h^2 \lambda^3}{3} \right) \bigg\vert_0^h \nonumber \\
+		&= -\frac{1}{6 h^3} \left( \frac{h^4}{4} - \frac{h^4}{3} \right) \nonumber \\
+		&= -\frac{h}{6} \left( \frac{3 - 4}{12} \right) = \frac{1}{24} h. \nonumber
+	\end{flalign}
+\end{itemize}
+
+Finalmente, o método de Adams-Bashforth de 3 passos é:
+\[y_{j + 1} = y_j + \frac{h}{24} [9 f_{j + 1} + 19 f_j - 5 f_{j - 1} + 1 f_{j - 2}].\]
+
+
+
+\separator
+
+\vs
+3. Um método linear de passo múltiplo, onde $m$ é o número de passos, pode ser escrito como
+\[y_{j + 1} = -\sum_{k = 0}^{m - 1} \alpha_{m - k - 1} y_{j - k} + h \sum_{k = 0} \beta_{m - k} f_{j - k + 1}.\]
+Ou seja, métodos explícitos são aqueles em que $\beta_m = 0$, e os implícitos são aqueles em que $\beta_m \neq 0$. Note que alguns métodos lineares de passo único (como o método de Euler) podem ser representados por essa formulação geral.
+
+O erro de truncamento desse método é dado por
+\[\tau_j(h) = \frac{1}{h} \left[ \varphi(x_{j + 1}) + \sum_{k = 0}^{m - 1} \alpha_{m - k - 1} y_{j - k} - h \sum_{k = 0}^m \beta_{m - k} \varphi'(x_{j - k + 1}) \right] \]
+Dadas as expansões de Taylor de $\varphi(x + hl)$ e $\varphi'(x + hl)$, tem-se que
+\[\tau_j(h) = \frac{1}{h} \left[ C_0 \varphi(x) + C_1 h \varphi'(x) + C_2 h^2 \varphi''(x) + \dots \right],\]
+onde $C_l = \sum_{k = 0}^m \frac{k^l}{l!} \alpha_k - \sum_{k = 0}^m \frac{k^{l - 1}}{(l - 1)!} \beta_k$. Aqui, supõe-se que $\alpha_m = 1$. Nesse caso, se $C_0 = C_1 = 0$, o erro de truncamento local tem ordem $\geq 1$; logo, o método é consistente. A recíproca é verdadeira: se o método é consistente, não podem haver termos multiplicando $\varphi(x)$ e $h \varphi'(x)$, de forma que $C_0 = C_1 = 0$.
+
+Agora, considere os polinômios característicos:
+\[\rho(z) = z^m + \sum_{k = 0}^{m - 1} \alpha_{m - k - 1} z^{m - k - 1}, \ \sigma(z) = \sum_{k = 0}^m \beta_{m - k} z^{m - k}.\]
+Note que $C_0 = \alpha_m + \sum_{k = 0}^{m - 1} \alpha_k = \rho(1)$. Ainda,
+\[C_1 = \sum_{k = 0}^m k \alpha_k - \sum_{k = 0}^m \beta_k = \rho'(1) - \sigma(1).\]
+Logo, uma maneira equivalente de determinar a consistência de um método se dá através dos polinômios característicos $\rho(z)$ e $\sigma(z)$:
+\[\rho(1) = 0 \text{ e } \rho'(1) - \sigma(1) = 0 \longleftrightarrow \text{O método é consistente.}\]
+
+Para o método de Adams-Bashforth de 3 passos, tem-se que $\alpha_2 = -1$, $\beta_2 = \frac{23}{12}$, $\beta_1 = -\frac{16}{12}$, e $\beta_0 = \frac{5}{12}$. Logo, os polinômios característicos são:
+\[\rho(z) = z^3 + \sum_{k = 0}^2 \alpha_{2 - k} z^{2 - k} = z^3 - z^2, \ \rho'(z) = 3 z^2 - 2z;\]
+\[\sigma(z) = \sum_{k = 0}^3 \beta_{3 - k} z^{3 - k} = \frac{23}{12} z^2 - \frac{16}{12} z + \frac{5}{12}.\]
+Assim, $\rho(1) = 0$ e $\rho'(1) - \sigma(1) = 0$; o método é consistente.
+
+Para o método de Adams-Moulton de 3 passos, tem-se que $\alpha_2 = -1$, $\beta_3 = \frac{9}{24}$, $\beta_2 = \frac{19}{24}$, $\beta_1 = -\frac{5}{24}$, e $\beta_0 = \frac{1}{24}$. Logo, os polinômios característicos são:
+\[\rho(z) = z^3 + \sum_{k = 0}^2 \alpha_{2 - k} z^{2 - k} = z^3 - z^2, \ \rho'(z) = 3 z^2 - 2z;\]
+\[\sigma(z) = \sum_{k = 0}^3 \beta_{3 - k} z^{3 - k} = \frac{9}{24} z^3 + \frac{19}{24} z^2 - \frac{5}{24} z + \frac{1}{24}.\]
+Assim, $\rho(1) = 0$ e $\rho'(1) - \sigma(1) = 0$; o método também é consistente.
+
+
+
+\separator
+
+\vs
+4. Um método linear de passo múltiplo, como definido no exercício anterior, é dito zero-estável se as raízes $z_k$ do polinômio característico $\rho$ são tais que:
+\begin{itemize}
+	\item $|z_k| \leq 1$, para $k \in \{1, \dots, m\}$.
+
+	\item se $z_k$ for uma raiz repetida, então $|z_k| < 1$.
+\end{itemize}
+Pelo teorema de Dalquist, um método linear de passo múltiplo é convergente se, e somente se, for consistente e zero-estável. Essas restrições impostas às raízes $z_k$ são necessárias pois, ao considerar a equações de diferenças homogênea correspondente ao método, as raízes são elevadas à potências arbitrárias. Logo, se $|z_k| > 1$, os erros crescem exponencialmente; se $|z_k| = 1$ é uma raiz repetida, os erros crescem polinomialmente.
+
+Os métodos de Adams-Bashforth e de Adams-Moulton de 3 passos têm o mesmo polinômio característico $\rho(z) = z^3 - z^2$, cujas raízes são $z_1 = 1$, $z_2 = z_3 = 0$. Logo, 1 é uma raíz simples e as demais raizes tem módulo menor que 1, de forma que os métodos são zero-estáveis. No exercício anterior, a consistência de ambos os métodos foram verificadas, então pode-se concluir que os métodos são convergentes.
+
+
+
+\separator
+
+\vs
+5. Dado o PVI $y' = -\lambda y; y(0) = 1$, sabe-se que o método de Euler é tal que
+\[y_{j + 1} = y_j + h (-\lambda y_j) = (1 - h \lambda) y_j.\]
+Logo, tem-se que $y_j = (1 - h \lambda)^j y_0 = (1 - h \lambda)^j$. Por outro lado, o método de Euler regressivo é tal que
+\[y_{j + 1} = y_j + h (-\lambda y_{j + 1}) \to (1 + h \lambda) y_{j + 1} = y_j.\]
+Logo, tem-se que $y_j = \left( \frac{1}{1 + h \lambda} \right)^j$.
+
+Pelo ponto de vista da estabilidade absoluta, define-se $z = -h \lambda$, de forma que $y_j = 1 + z$ e $y_j = \frac{1}{1 - z}$, pelos métodos de Euler e Euler regressivo, respectivamente. Os domínios de estabilidade $D_E$ e $D_R$ desses métodos, respectivamente, são definidas como:
+\[D_E = \{z \in \C: |1 + z| < 1\}; \ D_R = \{z \in C: \left| \frac{1}{1 - z} \right| < 1\}.\]
+Note que, para o método de Euler, o domínio de estabilidade é tal que $h \lambda \in (0, 2)$. Já para o método de Euler regressivo, o domínio de estabilidade é $\C$. Logo, o método é estável para todo $h \in \R$.
+
+Portanto, sendo $\lambda = 100$, a relação $y_j = \left( \frac{1}{1 + h \lambda} \right)^j$ decai rapidamente, enquanto $(1 - h \lambda)^j$ nem tanto, especialmente se $h \lambda \notin (0, 2)$. Ou seja, para que a convergência seja significativa no método de Euler, $h \in (0, 0.02)$.
+
+Foram utilizadas as mesmas implementações do TP1 (disponíveis \href{https://github.com/Tuzass/EDN}{aqui}) para os métodos de Euler e Euler regressivo. Devido ao valor alto de $\lambda = 100$, os métodos não se comportam muito bem com $h = 0.1$ e $h = 0.01$, mas se comportam extremamente bem para $h = 0.001$ e $h = 0.0001$.
+
+\clearpage
+Para o método de Euler, quando $h = 0.1$, o método se torna $y_{j + 1} = -9 y_j$, crescendo exponencialmente. Quando $h = 0.01$, a primeira iteração $y_1 = y_0 - 100 \lambda h y_0 = 1 - 1 = 0$. Daí, as próximas iterações $y_{j + 1} = y_j - h y_j = 0 - 0 = 0$. Portanto, a solução encontrada é $y(x) = 0$, que se aproxima rapidamente da solução exata, já que $\varphi(x) = e^{-100 x}$ converge rapidamente para 0. Já para $h = 0.001$ e $h = 0.0001$, o método passa a se comportar normalmente, exibindo um erro muito baixo devido à rápida convergência da solução exata. Esses comportamentos podem ser vistos, respectivamente, em \autoref{euler-01}, \autoref{euler-001}, e \autoref{euler-0001}.
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{plots/euler_01.png}
+	\caption{Método de Euler com $h = 0.1$. Devido ao alto valor de $\lambda$, o método diverge rapidamente.}
+	\label{euler-01}
+\end{figure}
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{plots/euler_001.png}
+	\caption{Método de Euler com $h = 0.01$. Devido ao fato de que $h \lambda = 1$, o método converge para 0 imediatamente.}
+	\label{euler-001}
+\end{figure}
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{plots/euler_0001.png}
+	\caption{Método de Euler com $h = 0.001$. O método se comporta normalmente.}
+	\label{euler-0001}
+\end{figure}
+
+\clearpage
+Já para o método de Euler regressivo, devido à implementação por meio de um esquema preditor-corretor de 2 correções, as correções causam um crescimento exponencial no valor de $y_{j + 1}^{(k + 1)}$ quando $h = 0.1$. Portanto, o método diverge apesar da estabilidade e consistência. Quando $h = 0.01$, o mesmo problema ocorre, fazendo $y_1 = y_2 = \dots = 0$. Novamente, o erro é extremamente baixo devido à rápida convergência da solução exata. Por fim, quando $h = 0.001$ ou $h = 0.0001$, o método se comporta normalmente. Isso pode ser visto, respectivamente, em \autoref{implicit-01}, \autoref{implicit-001}, e \autoref{implicit-0001}.
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{plots/implicit_01.png}
+	\caption{Método de Euler regressivo com $h = 0.1$. Devido à implementação do esquema preditor-corretor, os resultados divergem.}
+	\label{implicit-01}
+\end{figure}
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{plots/implicit_001.png}
+	\caption{Método de Euler regressivo com $h = 0.01$. Devido ao fato de que $h \lambda = 1$, o método converge para 0 imediatamente.}
+	\label{implicit-001}
+\end{figure}
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{plots/implicit_0001.png}
+	\caption{Método de Euler regressivo com $h = 0.001$. O método se comporta normalmente.}
+	\label{implicit-0001}
+\end{figure}
+
+
+
+\end{document}
