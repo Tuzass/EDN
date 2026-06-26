@@ -2,7 +2,7 @@
 
 ## TP1
 
-Análise de métodos numéricos para resolução de Equações Diferenciais Ordinárias de primeira ordem. Foram implementadas variações do método de Runge-Kutta de 2 estágios (Heun e ponto médio), e o método de Runge-Kutta de 4 estágios (RK4). Para visualizar os resultados dos métodos, deve-se compilar o arquivo `calculator.cpp` e então executar o script `main.py`. No Windows,
+Análise de métodos numéricos para resolução de Equações Diferenciais Ordinárias de primeira ordem e Equações Diferenciais Parciais de segunda ordem. Foram implementadas variações do método de Runge-Kutta de 2 estágios (Heun e ponto médio), e o método de Runge-Kutta de 4 estágios (RK4), assim como métodos de diferenças finitas. Para visualizar os resultados dos métodos, deve-se (dentro da pasta `odes` ou `pdes`) compilar os arquivos `calculator.cpp` e então executar os scripts `main.py`. No Windows,
 
 ``` bash
 g++ -O3 src\calculator.cpp -o calculator
